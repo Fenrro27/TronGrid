@@ -10,5 +10,10 @@ public class PlayerMotoController : MonoBehaviour
         float horizontal = Input.GetAxis("Horizontal");
 
         moto.SetInputs(vertical, horizontal);
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            moto.ToggleTurbo();
+        }
     }
 }

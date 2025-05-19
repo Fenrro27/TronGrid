@@ -4,8 +4,8 @@ public class MotoTronController : MonoBehaviour
 {
     [Header("Moto Settings")]
     public float maxSpeed = 20f;
-    public float acceleration = 50f;
-    public float brakeSpeed = 10f;
+    public float acceleration = 5f;
+    public float brakeSpeed = 5f;
     public float turnSpeed = 100f;
     public float minSpeedToTurn = 1f;
 
@@ -21,11 +21,16 @@ public class MotoTronController : MonoBehaviour
     public Transform frontWheel; // Referencia visual a la rueda delantera
     public float wheelRadius = 0.33f; // Ajusta según tu modelo
 
+    [Header("Turbo Settings")]
+    public float velocidadTurbo = 30f;
+    public GameObject[] turboTrails; // Objetos con TrailRenderer para el turbo
 
 
     private float currentSpeed = 0f;
     private float verticalInput = 0f;
     private float horizontalInput = 0f;
+    private bool turboActivo = false;
+
 
     void Update()
     {
@@ -40,17 +45,25 @@ public class MotoTronController : MonoBehaviour
 
     private void ApplyMovement()
     {
-        // Acelerar o frenar
-        if (Mathf.Abs(verticalInput) > 0.01f)
+        if (turboActivo)
         {
-            currentSpeed += verticalInput * acceleration * Time.deltaTime;
+            // Subir suavemente hasta velocidadTurbo usando la aceleración normal
+            currentSpeed = Mathf.MoveTowards(currentSpeed, velocidadTurbo, acceleration * Time.deltaTime);
         }
         else
         {
-            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime);
-        }
+            // Acelerar o frenar normalmente
+            if (Mathf.Abs(verticalInput) > 0.01f)
+            {
+                currentSpeed += verticalInput * acceleration * Time.deltaTime;
+            }
+            else
+            {
+                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime);
+            }
 
-        currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed, maxSpeed);
+            currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed, maxSpeed);
+        }
 
         // Movimiento hacia adelante
         transform.Translate(Vector3.forward * currentSpeed * Time.deltaTime);
@@ -68,11 +81,10 @@ public class MotoTronController : MonoBehaviour
             transform.Rotate(Vector3.up * turn);
         }
 
-
         UpdateSteeringVisual();
         UpdateWheelRotation();
-
     }
+
 
     private void UpdateSteeringVisual()
     {
@@ -97,4 +109,47 @@ public class MotoTronController : MonoBehaviour
         frontWheel.Rotate(Vector3.right, rotationAngle, Space.Self);
     }
 
+    public void ActivarTurbo()
+    {
+        if (turboActivo) return;
+        turboActivo = true;
+
+        foreach (GameObject trail in turboTrails)
+        {
+            if (trail != null)
+            {
+                TrailRenderer tr = trail.GetComponent<TrailRenderer>();
+                if (tr != null)
+                {
+                    tr.emitting = true;
+                }
+            }
+        }
+    }
+
+    public void DesactivarTurbo()
+    {
+        if (!turboActivo) return;
+        turboActivo = false;
+
+        foreach (GameObject trail in turboTrails)
+        {
+            if (trail != null)
+            {
+                TrailRenderer tr = trail.GetComponent<TrailRenderer>();
+                if (tr != null)
+                {
+                    tr.emitting = false;
+                }
+            }
+        }
+    }
+
+    public void ToggleTurbo()
+    {
+        if (turboActivo)
+            DesactivarTurbo();
+        else
+            ActivarTurbo();
+    }
 }
