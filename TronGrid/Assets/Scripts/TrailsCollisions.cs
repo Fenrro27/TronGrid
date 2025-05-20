@@ -18,6 +18,8 @@ public class TrailsCollisions : MonoBehaviour
 
     // Para detectar cambios en tiempo real
     private bool previousCollisionState = true;
+    private Transform collidersParent;
+
 
     void Start()
     {
@@ -25,7 +27,16 @@ public class TrailsCollisions : MonoBehaviour
         points.Clear();
         points.Add(transform.position);
         previousCollisionState = enableTrailsCollision;
+
+        // Crear o encontrar un objeto vacío como contenedor de colisiones
+        GameObject parentObj = GameObject.Find("TrailCollidersRoot");
+        if (parentObj == null)
+        {
+            parentObj = new GameObject("TrailCollidersRoot");
+        }
+        collidersParent = parentObj.transform;
     }
+
 
     void Update()
     {
@@ -67,6 +78,8 @@ public class TrailsCollisions : MonoBehaviour
 
         GameObject colliderObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
         colliderObj.name = "TrailCollider";
+        colliderObj.transform.parent = collidersParent;
+
 
         colliderObj.transform.position = offsetPosition;
         colliderObj.transform.rotation = Quaternion.LookRotation(forward);
@@ -74,6 +87,8 @@ public class TrailsCollisions : MonoBehaviour
 
         BoxCollider box = colliderObj.GetComponent<BoxCollider>();
         if (!box) box = colliderObj.AddComponent<BoxCollider>();
+
+        box.isTrigger = true; 
 
         if (!debug)
         {

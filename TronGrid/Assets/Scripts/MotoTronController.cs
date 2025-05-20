@@ -194,6 +194,13 @@ public class MotoTronController : MonoBehaviour
         }
     }
 
-
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.name.Contains("TrailCollider"))
+        {
+            Debug.Log("Toqué un rastro!");
+            // Aquí puedes destruir al jugador, terminar el juego, etc.
+        }
+    }
 
 }
