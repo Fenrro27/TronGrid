@@ -1,66 +1,105 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(TrailRenderer))]
 public class TrailsCollisions : MonoBehaviour
 {
-    public float colliderRadius = 0.2f;
-    public int maxColliders = 100;
+    [Header("Settings")]
+    public bool debug = true;
+    public bool enableTrailsCollision = true; // Visible y editable en Inspector
+    public float segmentSpacing = 0.2f;
+    public float colliderLifetime = 2f;
+    public float colliderThickness = 0.2f;
+    public float offsetBehind = 0.5f;
 
     private TrailRenderer trail;
-    private List<GameObject> colliderPool = new List<GameObject>();
+    private List<Vector3> points = new List<Vector3>();
+    private float timeSinceLastPoint = 0f;
 
-    void Awake()
+    // Para detectar cambios en tiempo real
+    private bool previousCollisionState = true;
+
+    void Start()
     {
         trail = GetComponent<TrailRenderer>();
+        points.Clear();
+        points.Add(transform.position);
+        previousCollisionState = enableTrailsCollision;
     }
 
     void Update()
     {
-        UpdateCollidersFromTrail();
-    }
-
-    void UpdateCollidersFromTrail()
-    {
-        int pointCount = trail.positionCount; // Solo puntos visibles actuales
-
-        EnsureColliderPoolSize(pointCount);
-
-        for (int i = 0; i < colliderPool.Count; i++)
+        // Detectamos si se reactivó la generación
+        if (!previousCollisionState && enableTrailsCollision)
         {
-            GameObject colGO = colliderPool[i];
-            if (i < pointCount)
+            points.Clear();
+            points.Add(transform.position);
+            timeSinceLastPoint = 0f;
+        }
+        previousCollisionState = enableTrailsCollision;
+
+        if (!enableTrailsCollision)
+            return;
+
+        timeSinceLastPoint += Time.deltaTime;
+        if (timeSinceLastPoint >= segmentSpacing)
+        {
+            Vector3 currentPos = transform.position;
+            if ((points[points.Count - 1] - currentPos).sqrMagnitude > 0.001f)
             {
-                Vector3 pos = trail.GetPosition(i);
-                colGO.transform.position = pos;
-                colGO.SetActive(true);
-            }
-            else
-            {
-                colGO.SetActive(false); // Desactivar coliders que ya no están en la estela visible
+                points.Add(currentPos);
+                CreateColliderSegment(points[points.Count - 2], currentPos);
+                timeSinceLastPoint = 0f;
             }
         }
     }
 
-    void EnsureColliderPoolSize(int size)
+    void CreateColliderSegment(Vector3 start, Vector3 end)
     {
-        while (colliderPool.Count < size && colliderPool.Count < maxColliders)
+        Vector3 direction = end - start;
+        float length = direction.magnitude;
+
+        if (length < 0.01f) return;
+
+        Vector3 forward = direction.normalized;
+        Vector3 midPoint = (start + end) / 2f;
+        Vector3 offsetPosition = midPoint - forward * offsetBehind;
+
+        GameObject colliderObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        colliderObj.name = "TrailCollider";
+
+        colliderObj.transform.position = offsetPosition;
+        colliderObj.transform.rotation = Quaternion.LookRotation(forward);
+        colliderObj.transform.localScale = new Vector3(colliderThickness, colliderThickness, length);
+
+        BoxCollider box = colliderObj.GetComponent<BoxCollider>();
+        if (!box) box = colliderObj.AddComponent<BoxCollider>();
+
+        if (!debug)
         {
-            GameObject col = new GameObject("TrailCollider3D");
-            SphereCollider sc = col.AddComponent<SphereCollider>();
-            sc.radius = colliderRadius;
-            sc.isTrigger = true; // Solo detección de colisiones
-            col.transform.parent = transform;
+            Destroy(colliderObj.GetComponent<MeshRenderer>());
+            Destroy(colliderObj.GetComponent<MeshFilter>());
+        }
+        else
+        {
+            var renderer = colliderObj.GetComponent<Renderer>();
+            Material debugMat = new Material(Shader.Find("Unlit/Color"));
+            debugMat.color = Color.green;
+            renderer.material = debugMat;
+        }
 
-            // Añadir componente para detectar colisiones, si quieres
-            // col.AddComponent<TrailHit>();
+        Destroy(colliderObj, colliderLifetime);
+    }
 
-            colliderPool.Add(col);
+    public void GenerarUltimoSegmento()
+    {
+        if (points.Count >= 2)
+        {
+            Vector3 penultimo = points[points.Count - 2];
+            Vector3 ultimo = points[points.Count - 1];
+            CreateColliderSegment(penultimo, ultimo);
         }
     }
-    void OnTriggerEnter(Collider other)
-    {
-        Debug.Log("Colisión con " + other.name);
-    }
+
 
 }

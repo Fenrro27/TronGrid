@@ -197,7 +197,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e4506ed109c1aba41be1681324b0e6c2, type: 2}
+  - {fileID: 2100000, guid: 42cc27c7d7e890941b10aa52b104fa43, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -305,7 +305,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e4506ed109c1aba41be1681324b0e6c2, type: 2}
+  - {fileID: 2100000, guid: 42cc27c7d7e890941b10aa52b104fa43, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -676,7 +676,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e4506ed109c1aba41be1681324b0e6c2, type: 2}
+  - {fileID: 2100000, guid: 42cc27c7d7e890941b10aa52b104fa43, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -924,11 +924,12 @@ MonoBehaviour:
   frontWheel: {fileID: 1468629834}
   wheelRadius: 0.33
   velocidadTurbo: 20
-  tiempoMaximoTurbo: 20
+  tiempoMaximoTurbo: 8
   turboTrails:
   - {fileID: 1721836956}
   - {fileID: 1509889959}
   trailSwayAmount: 0.04
+  trailCollision: {fileID: 1721836961}
 --- !u!54 &815504231
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -971,8 +972,8 @@ Transform:
   m_Children:
   - {fileID: 1491124582}
   - {fileID: 1852112047}
-  - {fileID: 1721836957}
   - {fileID: 1509889960}
+  - {fileID: 1721836957}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &938950652
@@ -1337,7 +1338,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1509889959}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0.12, z: -0.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1592,6 +1593,7 @@ GameObject:
   - component: {fileID: 1721836957}
   - component: {fileID: 1721836959}
   - component: {fileID: 1721836960}
+  - component: {fileID: 1721836961}
   m_Layer: 0
   m_Name: Trail V
   m_TagString: Untagged
@@ -1733,6 +1735,24 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 0
   m_ApplyActiveColorSpace: 1
+--- !u!114 &1721836961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721836956}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc15415ed44ceca41896beb9d21b13a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debug: 1
+  enableTrailsCollision: 0
+  segmentSpacing: 0.2
+  colliderLifetime: 10
+  colliderThickness: 0.2
+  offsetBehind: 0.5
 --- !u!1001 &1740292985
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1926,7 +1946,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e4506ed109c1aba41be1681324b0e6c2, type: 2}
+  - {fileID: 2100000, guid: 42cc27c7d7e890941b10aa52b104fa43, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

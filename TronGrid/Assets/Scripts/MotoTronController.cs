@@ -27,12 +27,14 @@ public class MotoTronController : MonoBehaviour
     public GameObject[] turboTrails;
     public float trailSwayAmount = 0.04f;
 
+    [Header("Trail Collision Settings")]
+    public TrailsCollisions trailCollision; 
 
     private float currentSpeed = 0f;
     private float verticalInput = 0f;
     private float horizontalInput = 0f;
     private bool turboActivo = false;
-    private float tiempoTurbo = 20f; // tiempo restante o recargado
+    private float tiempoTurbo = 20f;
 
     void Update()
     {
@@ -40,7 +42,6 @@ public class MotoTronController : MonoBehaviour
 
         if (turboActivo)
         {
-            // Consumir turbo
             tiempoTurbo -= Time.deltaTime;
 
             if (tiempoTurbo <= 0f)
@@ -50,7 +51,6 @@ public class MotoTronController : MonoBehaviour
         }
         else
         {
-            // Recargar turbo a la mitad de velocidad (doble tiempo)
             if (tiempoTurbo < tiempoMaximoTurbo)
             {
                 tiempoTurbo += Time.deltaTime * 0.5f;
@@ -79,7 +79,7 @@ public class MotoTronController : MonoBehaviour
 
                 if (currentSpeed < 0f && turboActivo)
                 {
-                    currentSpeed = 0f; // Evita retroceso durante el turbo
+                    currentSpeed = 0f;
                 }
             }
             else
@@ -87,11 +87,9 @@ public class MotoTronController : MonoBehaviour
                 currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime);
             }
 
-            // Limita la velocidad hacia atrás a -1 solo si el turbo está desactivado
             float minSpeed = turboActivo ? 0f : -1f;
             currentSpeed = Mathf.Clamp(currentSpeed, minSpeed, maxSpeed);
         }
-
 
         transform.Translate(Vector3.forward * currentSpeed * Time.deltaTime);
 
@@ -106,7 +104,6 @@ public class MotoTronController : MonoBehaviour
         UpdateSteeringVisual();
         UpdateWheelRotation();
         UpdateTurboTrailSway();
-
     }
 
     private void UpdateSteeringVisual()
@@ -129,7 +126,7 @@ public class MotoTronController : MonoBehaviour
 
     public void ActivarTurbo()
     {
-        if (turboActivo || tiempoTurbo <= 5f) return; // Tienes que tener al menos 5 segundo de turbo
+        if (turboActivo || tiempoTurbo <= 5f) return;
 
         turboActivo = true;
 
@@ -141,6 +138,11 @@ public class MotoTronController : MonoBehaviour
                 if (tr != null)
                     tr.emitting = true;
             }
+        }
+
+        if (trailCollision != null)
+        {
+            trailCollision.enableTrailsCollision = true;
         }
     }
 
@@ -159,6 +161,13 @@ public class MotoTronController : MonoBehaviour
                     tr.emitting = false;
             }
         }
+
+        if (trailCollision != null)
+        {
+            trailCollision.enableTrailsCollision = false;
+            trailCollision.GenerarUltimoSegmento();
+
+        }
     }
 
     public void ToggleTurbo()
@@ -168,22 +177,23 @@ public class MotoTronController : MonoBehaviour
         else
             ActivarTurbo();
     }
+
     private void UpdateTurboTrailSway()
     {
         if (turboTrails == null || turboTrails.Length == 0) return;
 
-        // Cantidad de desplazamiento lateral dependiendo del giro
         float swayOffset = horizontalInput * trailSwayAmount;
 
         foreach (GameObject trail in turboTrails)
         {
             if (trail == null) continue;
 
-            // Guardamos la posición original para evitar acumulaciones
             Vector3 baseLocalPos = trail.transform.localPosition;
-            baseLocalPos.x = swayOffset;  // Solo modificamos X
+            baseLocalPos.x = swayOffset;
             trail.transform.localPosition = baseLocalPos;
         }
     }
+
+
 
 }
