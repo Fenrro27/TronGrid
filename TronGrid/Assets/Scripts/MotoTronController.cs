@@ -35,6 +35,7 @@ public class MotoTronController : MonoBehaviour
     private float horizontalInput = 0f;
     private bool turboActivo = false;
     private float tiempoTurbo = 20f;
+    private bool muerte = false;
 
     void Update()
     {
@@ -61,34 +62,42 @@ public class MotoTronController : MonoBehaviour
 
     public void SetInputs(float vertical, float horizontal)
     {
+        if (muerte) return;
         verticalInput = Mathf.Clamp(vertical, -1f, 1f);
         horizontalInput = Mathf.Clamp(horizontal, -1f, 1f);
     }
 
     private void ApplyMovement()
     {
-        if (turboActivo)
+        if (muerte)
         {
-            currentSpeed = Mathf.MoveTowards(currentSpeed, velocidadTurbo, acceleration * Time.deltaTime);
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime * 2);
         }
         else
         {
-            if (Mathf.Abs(verticalInput) > 0.01f)
+            if (turboActivo)
             {
-                currentSpeed += verticalInput * acceleration * Time.deltaTime;
-
-                if (currentSpeed < 0f && turboActivo)
-                {
-                    currentSpeed = 0f;
-                }
+                currentSpeed = Mathf.MoveTowards(currentSpeed, velocidadTurbo, acceleration * Time.deltaTime);
             }
             else
             {
-                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime);
-            }
+                if (Mathf.Abs(verticalInput) > 0.01f)
+                {
+                    currentSpeed += verticalInput * acceleration * Time.deltaTime;
 
-            float minSpeed = turboActivo ? 0f : -1f;
-            currentSpeed = Mathf.Clamp(currentSpeed, minSpeed, maxSpeed);
+                    if (currentSpeed < 0f && turboActivo)
+                    {
+                        currentSpeed = 0f;
+                    }
+                }
+                else
+                {
+                    currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime);
+                }
+
+                float minSpeed = turboActivo ? 0f : -1f;
+                currentSpeed = Mathf.Clamp(currentSpeed, minSpeed, maxSpeed);
+            }
         }
 
         transform.Translate(Vector3.forward * currentSpeed * Time.deltaTime);
@@ -108,6 +117,8 @@ public class MotoTronController : MonoBehaviour
 
     private void UpdateSteeringVisual()
     {
+        if (muerte) return;
+
         if (steeringVisual != null)
         {
             float visualTurn = -horizontalInput * maxVisualTurnAngle;
@@ -117,6 +128,8 @@ public class MotoTronController : MonoBehaviour
 
     private void UpdateWheelRotation()
     {
+        if (muerte) return;
+
         if (frontWheel == null) return;
 
         float distanceMoved = currentSpeed * Time.deltaTime;
@@ -126,6 +139,8 @@ public class MotoTronController : MonoBehaviour
 
     public void ActivarTurbo()
     {
+        if (muerte) return;
+
         if (turboActivo || tiempoTurbo <= 5f) return;
 
         turboActivo = true;
@@ -148,6 +163,8 @@ public class MotoTronController : MonoBehaviour
 
     public void DesactivarTurbo()
     {
+        if (muerte) return;
+
         if (!turboActivo) return;
 
         turboActivo = false;
@@ -180,6 +197,8 @@ public class MotoTronController : MonoBehaviour
 
     private void UpdateTurboTrailSway()
     {
+        if (muerte) return;
+
         if (turboTrails == null || turboTrails.Length == 0) return;
 
         float swayOffset = horizontalInput * trailSwayAmount;
@@ -196,10 +215,13 @@ public class MotoTronController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.name.Contains("TrailCollider"))
+        if (other.gameObject.name.Contains("TrailCollider") || other.gameObject.CompareTag("GridLimit"))
         {
-            Debug.Log("Toqué un rastro!");
-            // Aquí puedes destruir al jugador, terminar el juego, etc.
+            Debug.Log("Colision");
+
+            transform.Find("Flynns Moto").gameObject.SetActive(false);
+            DesactivarTurbo();
+            muerte = true;
         }
     }
 
