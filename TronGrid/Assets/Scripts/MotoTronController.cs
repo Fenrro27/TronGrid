@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class MotoTronController : MonoBehaviour
@@ -28,7 +29,11 @@ public class MotoTronController : MonoBehaviour
     public float trailSwayAmount = 0.04f;
 
     [Header("Trail Collision Settings")]
-    public TrailsCollisions trailCollision; 
+    public TrailsCollisions trailCollision;
+
+    public AudioClip audioNormal;
+    public AudioClip audioTurbo;
+    public float duracionFade = 1.0f;
 
     private float currentSpeed = 0f;
     private float verticalInput = 0f;
@@ -37,6 +42,14 @@ public class MotoTronController : MonoBehaviour
     private float tiempoTurbo = 20f;
     private bool muerte = false;
 
+    private AudioSource efectoSonido;
+    private Coroutine fadeCoroutine;
+    private void Start()
+    {
+        efectoSonido = GetComponent<AudioSource>();
+        efectoSonido.clip = audioNormal;
+        efectoSonido.volume = 0f;
+    }
     void Update()
     {
         ApplyMovement();
@@ -72,6 +85,7 @@ public class MotoTronController : MonoBehaviour
         if (muerte)
         {
             currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime * 2);
+            DetenerSonido();
         }
         else
         {
@@ -83,6 +97,8 @@ public class MotoTronController : MonoBehaviour
             {
                 if (Mathf.Abs(verticalInput) > 0.01f)
                 {
+                    IniciarSonido();
+
                     currentSpeed += verticalInput * acceleration * Time.deltaTime;
 
                     if (currentSpeed < 0f && turboActivo)
@@ -93,6 +109,7 @@ public class MotoTronController : MonoBehaviour
                 else
                 {
                     currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeSpeed * Time.deltaTime);
+                    DetenerSonido();
                 }
 
                 float minSpeed = turboActivo ? 0f : -1f;
@@ -144,6 +161,7 @@ public class MotoTronController : MonoBehaviour
         if (turboActivo || tiempoTurbo <= 5f) return;
 
         turboActivo = true;
+        IniciarSonido(audioTurbo);
 
         foreach (GameObject trail in turboTrails)
         {
@@ -168,6 +186,7 @@ public class MotoTronController : MonoBehaviour
         if (!turboActivo) return;
 
         turboActivo = false;
+        IniciarSonido(audioNormal);
 
         foreach (GameObject trail in turboTrails)
         {
@@ -224,5 +243,57 @@ public class MotoTronController : MonoBehaviour
             muerte = true;
         }
     }
+    public void IniciarSonido(AudioClip clip = null)
+    {
+        if (fadeCoroutine != null)
+            StopCoroutine(fadeCoroutine);
 
+        if (clip != null && efectoSonido.clip != clip)
+        {
+            efectoSonido.clip = clip;
+            efectoSonido.volume = 0f;
+        }
+
+        fadeCoroutine = StartCoroutine(FadeIn(efectoSonido, duracionFade));
+    }
+
+    public void DetenerSonido()
+    {
+        if (fadeCoroutine != null)
+            StopCoroutine(fadeCoroutine);
+
+        fadeCoroutine = StartCoroutine(FadeOut(efectoSonido, duracionFade));
+    }
+
+    IEnumerator FadeIn(AudioSource source, float duration)
+    {
+        if (!source.isPlaying)
+            source.Play();
+
+        float targetVolume = 1f;
+
+        while (source.volume < targetVolume)
+        {
+            source.volume += Time.deltaTime / duration;
+            source.volume = Mathf.Min(source.volume, targetVolume);
+            yield return null;
+        }
+
+        source.volume = targetVolume;
+    }
+
+    IEnumerator FadeOut(AudioSource source, float duration)
+    {
+        float startVolume = source.volume;
+
+        while (source.volume > 0f)
+        {
+            source.volume -= Time.deltaTime / duration;
+            source.volume = Mathf.Max(source.volume, 0f);
+            yield return null;
+        }
+
+        source.volume = 0f;
+        source.Stop();
+    }
 }
