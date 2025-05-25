@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class MotoTronController : MonoBehaviour
@@ -39,16 +40,42 @@ public class MotoTronController : MonoBehaviour
     private float verticalInput = 0f;
     private float horizontalInput = 0f;
     private bool turboActivo = false;
-    private float tiempoTurbo = 20f;
+    private float tiempoTurbo;
     private bool muerte = false;
 
     private AudioSource efectoSonido;
     private Coroutine fadeCoroutine;
+
+    public static List<MotoTronController> TodasLasMotos = new List<MotoTronController>();
+
+    private void OnEnable()
+    {
+        if (!TodasLasMotos.Contains(this))
+            TodasLasMotos.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        TodasLasMotos.Remove(this);
+    }
+
+    private void OnDestroy()
+    {
+        TodasLasMotos.Remove(this);
+    }
+
+    void OnApplicationQuit()
+    {
+        TodasLasMotos.Clear();
+    }
+
+
     private void Start()
     {
         efectoSonido = GetComponent<AudioSource>();
         efectoSonido.clip = audioNormal;
         efectoSonido.volume = 0f;
+        tiempoTurbo = tiempoMaximoTurbo;
     }
     void Update()
     {
@@ -242,6 +269,23 @@ public class MotoTronController : MonoBehaviour
             DesactivarTurbo();
             muerte = true;
         }
+        else if (other.gameObject.CompareTag("Enemy"))
+        {
+            Debug.Log("Colision Agente");
+
+            transform.Find("Flynns Moto").gameObject.SetActive(false);
+            DesactivarTurbo();
+            muerte = true;
+
+        } else if (other.gameObject.CompareTag("Player"))
+        {
+            Debug.Log("Colision Jugador");
+
+            transform.Find("Flynns Moto").gameObject.SetActive(false);
+            DesactivarTurbo();
+            muerte = true;
+
+        }
     }
     public void IniciarSonido(AudioClip clip = null)
     {
@@ -296,4 +340,30 @@ public class MotoTronController : MonoBehaviour
         source.volume = 0f;
         source.Stop();
     }
+
+    // Variables solo de lectura 
+
+    // Porcentaje actual de carga de turbo (0 a 1)
+    public float PorcentajeTurboRestante => tiempoTurbo / tiempoMaximoTurbo;
+
+    // Velocidad actual en unidades por segundo
+    public float VelocidadActual => currentSpeed;
+
+    // Si el turbo está activo
+    public bool TurboActivo => turboActivo;
+
+    // Posición actual de la moto
+    public Vector3 PosicionActual => transform.position;
+
+    // Rotación actual de la moto (como Quaternion)
+    public Quaternion RotacionActual => transform.rotation;
+
+    // Rotación como ángulo en Y (útil para lógica de dirección)
+    public float RotacionY => transform.eulerAngles.y;
+
+    // Dirección actual de la moto (vector normalizado hacia adelante)
+    public Vector3 DireccionActual => transform.forward;
+
+    public bool EstaMuerta => muerte;
+
 }
