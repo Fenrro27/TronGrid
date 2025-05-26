@@ -349,12 +349,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc15415ed44ceca41896beb9d21b13a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debug: 0
+  debug: 1
   enableTrailsCollision: 0
   segmentSpacing: 0.03
   colliderLifetime: 10
   colliderThickness: 0.2
-  offsetBehind: 0.2
+  offsetBehind: 0.32
 --- !u!1 &3622012834516351027
 GameObject:
   m_ObjectHideFlags: 0
@@ -386,7 +386,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -103, y: 0.001, z: -103}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2712424256925969006}
