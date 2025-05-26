@@ -48,6 +48,7 @@ public class MotoTronController : MonoBehaviour
     private bool tieneAgentAI = false;
     private int nReapariciones=0;
 
+    public static long puntos = 0;
 
     private AudioSource efectoSonido;
     private Coroutine fadeCoroutine;
@@ -307,8 +308,14 @@ public class MotoTronController : MonoBehaviour
         DesactivarTurbo();
         muerte = true;
 
-        if (tieneAgentAI)
-            StartCoroutine(ReaparecerDespuesDeTiempo(5f));
+        if (CompareTag("Player"))
+        {
+            MotoTronController.puntos -= 100;
+            Debug.Log("Jugador murió. -100 puntos. Total: " + MotoTronController.puntos);
+        }
+
+
+        StartCoroutine(ReaparecerDespuesDeTiempo(5f));
     }
 
     private IEnumerator ReaparecerDespuesDeTiempo(float segundos)
@@ -384,6 +391,7 @@ public class MotoTronController : MonoBehaviour
         source.volume = 0f;
         source.Stop();
     }
+
 
     // Variables solo de lectura 
 
