@@ -43,6 +43,12 @@ public class MotoTronController : MonoBehaviour
     private float tiempoTurbo;
     private bool muerte = false;
 
+    private Vector3 posicionInicial;
+    private Quaternion rotacionInicial;
+    private bool tieneAgentAI = false;
+    private int nReapariciones=0;
+
+
     private AudioSource efectoSonido;
     private Coroutine fadeCoroutine;
 
@@ -76,7 +82,13 @@ public class MotoTronController : MonoBehaviour
         efectoSonido.clip = audioNormal;
         efectoSonido.volume = 0f;
         tiempoTurbo = tiempoMaximoTurbo;
+
+        posicionInicial = transform.position;
+        rotacionInicial = transform.rotation;
+
+        tieneAgentAI = GetComponent<AgentMotoController>() != null;
     }
+
     void Update()
     {
         ApplyMovement();
@@ -265,28 +277,60 @@ public class MotoTronController : MonoBehaviour
         {
             Debug.Log("Colision");
 
-            transform.Find("Flynns Moto").gameObject.SetActive(false);
-            DesactivarTurbo();
-            muerte = true;
+            ManejarMuerte();
+
         }
         else if (other.gameObject.CompareTag("Enemy"))
         {
             Debug.Log("Colision Agente");
 
-            transform.Find("Flynns Moto").gameObject.SetActive(false);
-            DesactivarTurbo();
-            muerte = true;
+            ManejarMuerte();
 
-        } else if (other.gameObject.CompareTag("Player"))
+
+        }
+        else if (other.gameObject.CompareTag("Player"))
         {
             Debug.Log("Colision Jugador");
 
-            transform.Find("Flynns Moto").gameObject.SetActive(false);
-            DesactivarTurbo();
-            muerte = true;
+            ManejarMuerte();
+
 
         }
     }
+
+    private void ManejarMuerte()
+    {
+        if (muerte) return;
+
+        Debug.Log("Muerte detectada en: " + gameObject.name);
+        transform.Find("Flynns Moto").gameObject.SetActive(false);
+        DesactivarTurbo();
+        muerte = true;
+
+        if (tieneAgentAI)
+            StartCoroutine(ReaparecerDespuesDeTiempo(5f));
+    }
+
+    private IEnumerator ReaparecerDespuesDeTiempo(float segundos)
+    {
+        nReapariciones++;
+        yield return new WaitForSeconds(segundos);
+
+        // Restaurar estado
+        transform.position = posicionInicial;
+        transform.rotation = rotacionInicial;
+        currentSpeed = 0f;
+        tiempoTurbo = tiempoMaximoTurbo;
+        muerte = false;
+
+        // Reactivar visual
+        Transform visual = transform.Find("Flynns Moto");
+        if (visual != null) visual.gameObject.SetActive(true);
+
+        Debug.Log("Reapareció: " + gameObject.name);
+    }
+
+
     public void IniciarSonido(AudioClip clip = null)
     {
         if (fadeCoroutine != null)
@@ -365,5 +409,8 @@ public class MotoTronController : MonoBehaviour
     public Vector3 DireccionActual => transform.forward;
 
     public bool EstaMuerta => muerte;
+
+    //Numero de veces que ha respawneado la moto
+    public int reaparicionesTotales => nReapariciones;
 
 }

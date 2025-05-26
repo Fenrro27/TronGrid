@@ -79,7 +79,7 @@ public class TrailsCollisions : MonoBehaviour
         GameObject colliderObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
         colliderObj.name = "TrailCollider";
         colliderObj.transform.parent = collidersParent;
-        colliderObj.layer = LayerMask.NameToLayer("Estelas");
+        colliderObj.layer = LayerMask.NameToLayer("layerObstaculos");
 
 
         colliderObj.transform.position = offsetPosition;
