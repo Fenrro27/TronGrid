@@ -349,7 +349,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc15415ed44ceca41896beb9d21b13a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debug: 1
+  debug: 0
   enableTrailsCollision: 0
   segmentSpacing: 0.03
   colliderLifetime: 10
