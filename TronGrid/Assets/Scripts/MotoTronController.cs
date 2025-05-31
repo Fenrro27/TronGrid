@@ -88,6 +88,14 @@ public class MotoTronController : MonoBehaviour
         rotacionInicial = transform.rotation;
 
         tieneAgentAI = GetComponent<AgentMotoController>() != null;
+
+        trailCollision = GetComponentInChildren<TrailsCollisions>();
+
+        if (trailCollision != null)
+        {
+            trailCollision.SetOriginObject(gameObject);
+        }
+
     }
 
     void Update()
@@ -198,7 +206,7 @@ public class MotoTronController : MonoBehaviour
     {
         if (muerte) return;
 
-        if (turboActivo || tiempoTurbo <= 5f) return;
+        if (turboActivo || PorcentajeTurboRestante < 0.2f) return;
 
         turboActivo = true;
         IniciarSonido(audioTurbo);
@@ -278,14 +286,14 @@ public class MotoTronController : MonoBehaviour
         {
             Debug.Log("Colision");
 
-            ManejarMuerte();
+            ManejarMuerte(other.gameObject);
 
         }
         else if (other.gameObject.CompareTag("Enemy"))
         {
             Debug.Log("Colision Agente");
 
-            ManejarMuerte();
+            ManejarMuerte(other.gameObject);
 
 
         }
@@ -293,13 +301,13 @@ public class MotoTronController : MonoBehaviour
         {
             Debug.Log("Colision Jugador");
 
-            ManejarMuerte();
+            ManejarMuerte(other.gameObject);
 
 
         }
     }
 
-    private void ManejarMuerte()
+    private void ManejarMuerte(GameObject causante)
     {
         if (muerte) return;
 
@@ -308,10 +316,18 @@ public class MotoTronController : MonoBehaviour
         DesactivarTurbo();
         muerte = true;
 
-        if (CompareTag("Player"))
+        bool esJugador = CompareTag("Player");
+        bool causanteEsJugador = causante.CompareTag("Player");
+
+        if (esJugador)
         {
             MotoTronController.puntos -= 100;
             Debug.Log("Jugador murió. -100 puntos. Total: " + MotoTronController.puntos);
+        }
+        else if (causanteEsJugador)
+        {
+            MotoTronController.puntos += 150;
+            Debug.Log("NPC murió por jugador. +150 puntos. Total: " + MotoTronController.puntos);
         }
 
 

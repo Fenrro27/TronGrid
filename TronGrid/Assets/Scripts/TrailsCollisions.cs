@@ -20,6 +20,8 @@ public class TrailsCollisions : MonoBehaviour
     private bool previousCollisionState = true;
     private Transform collidersParent;
 
+    private GameObject originObject;
+
 
     void Start()
     {
@@ -64,6 +66,10 @@ public class TrailsCollisions : MonoBehaviour
             }
         }
     }
+    public void SetOriginObject(GameObject origin)
+    {
+        originObject = origin;
+    }
 
     void CreateColliderSegment(Vector3 start, Vector3 end)
     {
@@ -81,6 +87,10 @@ public class TrailsCollisions : MonoBehaviour
         colliderObj.transform.parent = collidersParent;
         colliderObj.layer = LayerMask.NameToLayer("layerObstaculos");
 
+        if (originObject != null)
+        {
+            colliderObj.tag = originObject.tag;
+        }
 
         colliderObj.transform.position = offsetPosition;
         colliderObj.transform.rotation = Quaternion.LookRotation(forward);
