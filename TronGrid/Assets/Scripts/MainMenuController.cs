@@ -1,5 +1,7 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MainMenuController : MonoBehaviour
 {
@@ -8,6 +10,7 @@ public class MainMenuController : MonoBehaviour
     public float escalar1 = 0.8f;
     public float escalar2 = 1f;
     public CanvasGroup[] submenus;
+    public TMP_InputField inputNombre;
 
     private Quaternion ejeRotacion;
     private bool rotando = false;
@@ -38,11 +41,11 @@ public class MainMenuController : MonoBehaviour
     {
         if (!rotando)
         {
-            if (Input.GetKeyDown(KeyCode.A))
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 rotarIzquierda();
             }
-            else if (Input.GetKeyDown(KeyCode.D))
+            else if (Input.GetKeyDown(KeyCode.RightArrow))
             {
                 rotarDerecha();
             }
@@ -143,5 +146,14 @@ public class MainMenuController : MonoBehaviour
             yield return null;
         }
         submenu.localScale = Vector3.one * end;
+    }
+
+    public void jugar()
+    {
+        if (inputNombre != null && !string.IsNullOrWhiteSpace(inputNombre.text))
+        {
+            ControladorPuntuacion.instance.nombreJugador = inputNombre.text;
+            SceneManager.LoadScene("GridScene");
+        }
     }
 }

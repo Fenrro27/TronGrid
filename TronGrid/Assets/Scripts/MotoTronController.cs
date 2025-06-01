@@ -48,8 +48,6 @@ public class MotoTronController : MonoBehaviour
     private bool tieneAgentAI = false;
     private int nReapariciones=0;
 
-    public static long puntos = 0;
-
     private AudioSource efectoSonido;
     private Coroutine fadeCoroutine;
 
@@ -321,13 +319,11 @@ public class MotoTronController : MonoBehaviour
 
         if (esJugador)
         {
-            MotoTronController.puntos -= 100;
-            Debug.Log("Jugador murió. -100 puntos. Total: " + MotoTronController.puntos);
+            ControladorPuntuacion.instance.puntuar(-100);
         }
         else if (causanteEsJugador)
         {
-            MotoTronController.puntos += 150;
-            Debug.Log("NPC murió por jugador. +150 puntos. Total: " + MotoTronController.puntos);
+            ControladorPuntuacion.instance.puntuar(150);
         }
 
 

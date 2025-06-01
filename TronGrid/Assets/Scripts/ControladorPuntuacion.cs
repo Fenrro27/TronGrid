@@ -14,6 +14,8 @@ public class ControladorPuntuacion : MonoBehaviour
 
     private TextMeshProUGUI puntuacion;
 
+    private TextMeshProUGUI puntuacionFinal;
+
     private RecordsController records;
 
     private void Awake()
@@ -39,6 +41,7 @@ public class ControladorPuntuacion : MonoBehaviour
     {
         puntosJugador += puntos;
         puntuacion.text = puntosJugador.ToString();
+        puntuacionFinal.text = nombreJugador + " - - - - - " + puntuacion.text;
     }
 
     private void asignarDependencias(Scene scene, LoadSceneMode mode)
@@ -47,7 +50,8 @@ public class ControladorPuntuacion : MonoBehaviour
         if (SceneManager.GetActiveScene().name == "GridScene")
         {
             puntuacion = GameObject.Find("Puntuacion")?.GetComponent<TextMeshProUGUI>();
-            records = GameObject.Find("ControladorRecords")?.GetComponent<RecordsController>();
+            puntuacionFinal = GameObject.Find("PuntuacionFinal")?.GetComponent<TextMeshProUGUI>();
+            records = GameObject.Find("RecordsController")?.GetComponent<RecordsController>();
         }
     }
 
