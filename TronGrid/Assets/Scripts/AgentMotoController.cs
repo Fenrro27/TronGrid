@@ -22,8 +22,12 @@ public class AgentMotoController : MonoBehaviour
     [Header("Turbo Ofensivo")]
     public float distanciaMaxTurboOfensivo = 20f;
     public float amenazaMaximaTurbo = 0.3f;
-    public float cargaTurboMinima = 0.5f;
+    public float cargaTurboMinima = 0.2f;
     public float velocidadMinimaTurbo = 5f;
+
+    [Header("Estela por Proximidad Global")]
+    public float distanciaMaxEstelaGlobal = 15f;
+    public float agresividadGlobalUmbral = 0.6f;
 
     private bool estadoTurboAnterior = false;
     private bool soloPerseguirPlayers;
@@ -139,13 +143,13 @@ public class AgentMotoController : MonoBehaviour
         moto.SetInputs(vertical, horizontal);
     }
 
+
     void RecalcularObjetivoYModo()
     {
-        Debug.Log("Recalculando Objetivo Y Modo");
 
-        soloPerseguirPlayers = Random.value <= 0.5f;
-        esKamikaze = Random.value <= 0.05f;
-        usarObjetivoAleatorio = Random.value <= 0.4f; // 30% de probabilidad de objetivo aleatorio
+        soloPerseguirPlayers = Random.value <= 0.6f;
+        esKamikaze = Random.value <= 0.1f;
+        usarObjetivoAleatorio = Random.value <= 0.6f; // 30% de probabilidad de objetivo aleatorio
 
         if (soloPerseguirPlayers) Debug.Log("Sigue a jugador");
 
@@ -232,4 +236,26 @@ public class AgentMotoController : MonoBehaviour
         }
         return 0f;
     }
+
+    float AgresividadGlobalDifusa()
+    {
+        float agresividadMax = 0f;
+
+        foreach (var otraMoto in MotoTronController.TodasLasMotos)
+        {
+            if (otraMoto == null || otraMoto == moto || otraMoto.EstaMuerta)
+                continue;
+
+            float distancia = Vector3.Distance(moto.PosicionActual, otraMoto.PosicionActual);
+            if (distancia > distanciaMaxEstelaGlobal)
+                continue;
+
+            float agresividad = AgresividadDifusa(distancia, distanciaMaxEstelaGlobal);
+            if (agresividad > agresividadMax)
+                agresividadMax = agresividad;
+        }
+
+        return agresividadMax;
+    }
+
 }

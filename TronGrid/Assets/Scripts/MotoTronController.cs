@@ -319,11 +319,11 @@ public class MotoTronController : MonoBehaviour
 
         if (esJugador)
         {
-            ControladorPuntuacion.instance.puntuar(-100);
+            ControladorPuntuacion.instance.puntuar(-200);
         }
         else if (causanteEsJugador)
         {
-            ControladorPuntuacion.instance.puntuar(150);
+            ControladorPuntuacion.instance.puntuar(100);
         }
 
 
