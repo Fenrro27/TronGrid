@@ -1444,7 +1444,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 53
+  field of view: 60.4
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -1457,7 +1457,7 @@ Camera:
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
+  m_AllowDynamicResolution: 1
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
@@ -1501,7 +1501,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
-  m_Antialiasing: 0
+  m_Antialiasing: 1
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -4614,7 +4614,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Juan Antonio de la Rosa de la Cruz\n\nKevin Jes\xFAs Abanda Azojil"
+  m_text: 'Kevin Jesus Banda Azogil
+
+
+    Juan Antonio de la Rosa de la Cruz
+
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ee964b0dc1601f54d80452a9980645cc, type: 2}
   m_sharedMaterial: {fileID: -3155558552043126228, guid: ee964b0dc1601f54d80452a9980645cc, type: 2}
