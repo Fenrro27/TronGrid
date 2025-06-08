@@ -21,9 +21,6 @@ public class AgentMotoController : MonoBehaviour
 
     [Header("Turbo Ofensivo")]
     public float distanciaMaxTurboOfensivo = 20f;
-    public float amenazaMaximaTurbo = 0.3f;
-    public float cargaTurboMinima = 0.2f;
-    public float velocidadMinimaTurbo = 5f;
 
     [Header("Estela por Proximidad Global")]
     public float distanciaMaxEstelaGlobal = 15f;
@@ -33,7 +30,6 @@ public class AgentMotoController : MonoBehaviour
     private bool soloPerseguirPlayers;
     private bool esKamikaze;
     private bool usarObjetivoAleatorio;
-
 
     private int reaparicionesPrevias = -1;
     private MotoTronController objetivoActual;
@@ -46,14 +42,12 @@ public class AgentMotoController : MonoBehaviour
 
     void Update()
     {
-        // Verificar si se ha incrementado el contador de reapariciones
         if (moto.reaparicionesTotales != reaparicionesPrevias)
         {
             reaparicionesPrevias = moto.reaparicionesTotales;
             RecalcularObjetivoYModo();
         }
 
-        // Sensado
         float frontDist = RaycastDist(transform.forward);
         float leftDist = RaycastDist(Quaternion.AngleAxis(-rayAngle, Vector3.up) * transform.forward);
         float rightDist = RaycastDist(Quaternion.AngleAxis(rayAngle, Vector3.up) * transform.forward);
@@ -65,95 +59,127 @@ public class AgentMotoController : MonoBehaviour
         float vertical;
         float horizontal;
 
-        // Comportamiento kamikaze (solo si hay objetivo)
-        bool puedeSerKamikaze = esKamikaze && objetivoActual != null;
-
-        if (puedeSerKamikaze)
+        if (esKamikaze && objetivoActual != null)
         {
             Vector3 dirToTarget = (objetivoActual.PosicionActual - transform.position).normalized;
             float angleToTarget = Vector3.SignedAngle(transform.forward, dirToTarget, Vector3.up);
-
             vertical = 1f;
             horizontal = Mathf.Clamp(angleToTarget / 45f, -1f, 1f);
-
             moto.SetInputs(vertical, horizontal);
+
+            // Activar turbo si está cerca del objetivo
+            float distanciaAlObjetivo = Vector3.Distance(moto.PosicionActual, objetivoActual.PosicionActual);
+            if (distanciaAlObjetivo < 10f && !moto.TurboActivo)
+            {
+                ControlTurbo(true);
+                Debug.Log("Kamikaze activó turbo por proximidad");
+            }
+            else if (distanciaAlObjetivo >= 10f && moto.TurboActivo)
+            {
+                ControlTurbo(false);
+                Debug.Log("Kamikaze desactivó turbo por distancia");
+            }
+
             Debug.Log("Modo kamikaze activado");
             return;
         }
 
-        // Evaluación de amenazas normales
-        if (threatFront > 0.6f && (threatLeft > 0.6f || threatRight > 0.6f))
-        {
-            vertical = 0f;
-            horizontal = threatLeft < threatRight ? -1f : 1f;
 
-            if (moto.TurboActivo)
-                ControlTurbo(false);
+        if (objetivoActual != null)
+        {
+            Vector3 puntoPredicho = objetivoActual.PosicionActual + objetivoActual.DireccionActual * objetivoActual.VelocidadActual * tiempoPrediccion;
+            Vector3 dirToInterception = (puntoPredicho - transform.position).normalized;
+            float angleToTarget = Vector3.SignedAngle(transform.forward, dirToInterception, Vector3.up);
+
+            vertical = 1f;
+            horizontal = Mathf.Clamp(angleToTarget / 45f, -1f, 1f);
         }
         else
         {
-            if (objetivoActual != null)
-            {
-                // Persecución con predicción
-                Vector3 puntoPredicho = objetivoActual.PosicionActual + objetivoActual.DireccionActual * objetivoActual.VelocidadActual * tiempoPrediccion;
-                Vector3 dirToInterception = (puntoPredicho - transform.position).normalized;
-                float angleToTarget = Vector3.SignedAngle(transform.forward, dirToInterception, Vector3.up);
-
-                vertical = 1f;
-                horizontal = Mathf.Clamp(angleToTarget / 45f, -1f, 1f);
-
-                // Evaluación de ofensiva
-                float distanciaAlObjetivo = Vector3.Distance(moto.PosicionActual, objetivoActual.PosicionActual);
-                float agresividad = AgresividadDifusa(distanciaAlObjetivo, distanciaMaxTurboOfensivo);
-
-                bool puedeActivarTurbo =
-                    distanciaAlObjetivo < distanciaMaxTurboOfensivo &&
-                    moto.PorcentajeTurboRestante >= cargaTurboMinima &&
-                    moto.VelocidadActual >= velocidadMinimaTurbo &&
-                    threatFront < amenazaMaximaTurbo &&
-                    !moto.TurboActivo;
-
-                if (puedeActivarTurbo && agresividad > 0.5f)
-                {
-                    ControlTurbo(true);
-                    Debug.Log("Turbo ofensivo activado (agresividad: " + agresividad.ToString("F2") + ")");
-                }
-
-                if (moto.TurboActivo)
-                {
-                    bool debeDesactivar =
-                        distanciaAlObjetivo > distanciaMaxTurboOfensivo ||
-                        threatFront > amenazaMaximaTurbo ||
-                        agresividad < 0.3f;
-
-                    if (debeDesactivar)
-                    {
-                        ControlTurbo(false);
-                        Debug.Log("Turbo desactivado para conservar energía (agresividad: " + agresividad.ToString("F2") + ")");
-                    }
-                }
-            }
-            else
-            {
-                vertical = Mathf.Clamp01(1f - threatFront);
-                horizontal = DecidirDireccion(threatFront, threatLeft, threatRight);
-            }
+            vertical = Mathf.Clamp01(1f - threatFront);
+            horizontal = EvaluarDireccionDifusa(threatFront, threatLeft, threatRight);
         }
 
+        EvaluarYControlarTurbo(threatFront);
         moto.SetInputs(vertical, horizontal);
     }
 
+    float EvaluarDireccionDifusa(float amenazaFrente, float amenazaIzquierda, float amenazaDerecha)
+    {
+        var reglas = new List<(float fuerza, float direccion)>
+        {
+            (Mathf.Min(PertenenciaAltaPorValor(amenazaFrente), PertenenciaBajaPorValor(amenazaDerecha)), 1f),
+            (Mathf.Min(PertenenciaAltaPorValor(amenazaFrente), PertenenciaBajaPorValor(amenazaIzquierda)), -1f),
+            (Mathf.Min(PertenenciaMediaPorValor(amenazaFrente), PertenenciaMediaPorValor(amenazaIzquierda), PertenenciaMediaPorValor(amenazaDerecha)), 0f),
+            (PertenenciaBajaPorValor(amenazaFrente), 0f)
+        };
+
+        float sumaFuerzas = reglas.Sum(r => r.fuerza);
+        if (sumaFuerzas == 0) return 0f;
+
+        return reglas.Sum(r => r.fuerza * r.direccion) / sumaFuerzas;
+    }
+
+    void EvaluarYControlarTurbo(float amenazaFrontal)
+    {
+        if (objetivoActual == null) return;
+
+        float distancia = Vector3.Distance(moto.PosicionActual, objetivoActual.PosicionActual);
+        float velocidad = moto.VelocidadActual;
+        float carga = moto.PorcentajeTurboRestante;
+
+        float distCerca = PertenenciaCerca(distancia);
+        float distMedia = PertenenciaMediaDistancia(distancia);
+        float distLejos = PertenenciaLejos(distancia);
+
+        float amenazaBaja = PertenenciaBajaPorValor(amenazaFrontal);
+        float amenazaAlta = PertenenciaAltaPorValor(amenazaFrontal);
+
+        float velLenta = PertenenciaLenta(velocidad);
+        float velRapida = PertenenciaRapida(velocidad);
+
+        float cargaAlta = PertenenciaAlta(carga);
+        float cargaBaja = PertenenciaBaja(carga);
+
+        float agresividadGlobal = AgresividadGlobalDifusa();
+        bool aumentarAgresividad = agresividadGlobal > agresividadGlobalUmbral;
+
+        if (aumentarAgresividad)
+        {
+            distCerca = Mathf.Max(distCerca, 0.6f);  // fuerza la distancia a parecer más corta
+            cargaAlta = Mathf.Max(cargaAlta, 0.6f);  // fuerza considerar suficiente carga
+        }
+
+        List<(float fuerza, bool activar)> reglas = new List<(float, bool)>
+        {
+            (Mathf.Min(distCerca, amenazaBaja, velRapida, cargaAlta), true),
+            (Mathf.Min(distMedia, amenazaBaja, velRapida, cargaAlta), true),
+            (Mathf.Max(distLejos, amenazaAlta), false),
+            (amenazaAlta, false),
+            (Mathf.Min(distCerca, amenazaBaja, velLenta, cargaBaja), false)
+        };
+
+        float activarF = reglas.Where(r => r.activar).Sum(r => r.fuerza);
+        float desactivarF = reglas.Where(r => !r.activar).Sum(r => r.fuerza);
+
+        if (activarF > desactivarF && !moto.TurboActivo)
+        {
+            ControlTurbo(true);
+            Debug.Log("Turbo activado por lógica difusa");
+        }
+        else if (desactivarF >= activarF && moto.TurboActivo)
+        {
+            ControlTurbo(false);
+            Debug.Log("Turbo desactivado por lógica difusa");
+        }
+    }
 
     void RecalcularObjetivoYModo()
     {
-
         soloPerseguirPlayers = Random.value <= 0.6f;
         esKamikaze = Random.value <= 0.1f;
-        usarObjetivoAleatorio = Random.value <= 0.6f; // 30% de probabilidad de objetivo aleatorio
+        usarObjetivoAleatorio = Random.value <= 0.6f;
 
-        if (soloPerseguirPlayers) Debug.Log("Sigue a jugador");
-
-        // Intentar obtener objetivos según la prioridad: jugadores -> cualquiera
         var posiblesObjetivos = MotoTronController.TodasLasMotos
             .Where(m => m != moto && m != null && !m.EstaMuerta)
             .ToList();
@@ -162,7 +188,6 @@ public class AgentMotoController : MonoBehaviour
             ? posiblesObjetivos.Where(m => m.CompareTag("Player")).ToList()
             : posiblesObjetivos;
 
-        // Si no hay jugadores disponibles, usar todos
         if (candidatos.Count == 0)
         {
             candidatos = posiblesObjetivos;
@@ -174,22 +199,10 @@ public class AgentMotoController : MonoBehaviour
             return;
         }
 
-        if (usarObjetivoAleatorio && !soloPerseguirPlayers)
-        {
-            int indice = Random.Range(0, candidatos.Count);
-            objetivoActual = candidatos[indice];
-            Debug.Log("Objetivo aleatorio seleccionado");
-        }
-        else
-        {
-            objetivoActual = candidatos
-                .OrderBy(m => Vector3.Distance(moto.PosicionActual, m.PosicionActual))
-                .FirstOrDefault();
-            Debug.Log("Objetivo más cercano seleccionado");
-        }
+        objetivoActual = usarObjetivoAleatorio && !soloPerseguirPlayers
+            ? candidatos[Random.Range(0, candidatos.Count)]
+            : candidatos.OrderBy(m => Vector3.Distance(moto.PosicionActual, m.PosicionActual)).FirstOrDefault();
     }
-
-
 
     void ControlTurbo(bool activar)
     {
@@ -219,24 +232,6 @@ public class AgentMotoController : MonoBehaviour
         return 1f - ((distancia - 1f) / (rayDistance - 1f));
     }
 
-    float AgresividadDifusa(float distancia, float distanciaMax)
-    {
-        if (distancia >= distanciaMax) return 0f;
-        if (distancia <= 5f) return 1f;
-        return 1f - ((distancia - 5f) / (distanciaMax - 5f));
-    }
-
-    float DecidirDireccion(float amenazaFrente, float amenazaIzquierda, float amenazaDerecha)
-    {
-        if (amenazaFrente > 0.6f)
-        {
-            if (amenazaIzquierda < amenazaDerecha) return -1f;
-            if (amenazaDerecha < amenazaIzquierda) return 1f;
-            return Random.value < 0.5f ? -1f : 1f;
-        }
-        return 0f;
-    }
-
     float AgresividadGlobalDifusa()
     {
         float agresividadMax = 0f;
@@ -250,7 +245,7 @@ public class AgentMotoController : MonoBehaviour
             if (distancia > distanciaMaxEstelaGlobal)
                 continue;
 
-            float agresividad = AgresividadDifusa(distancia, distanciaMaxEstelaGlobal);
+            float agresividad = AmenazaDifusa(distancia);
             if (agresividad > agresividadMax)
                 agresividadMax = agresividad;
         }
@@ -258,4 +253,17 @@ public class AgentMotoController : MonoBehaviour
         return agresividadMax;
     }
 
+    float PertenenciaCerca(float d) => Mathf.Clamp01((15f - d) / 10f);
+    float PertenenciaMediaDistancia(float d) => Mathf.Clamp01(1f - Mathf.Abs(d - 20f) / 10f);
+    float PertenenciaLejos(float d) => Mathf.Clamp01((d - 20f) / 10f);
+
+    float PertenenciaLenta(float v) => Mathf.Clamp01((5f - v) / 5f);
+    float PertenenciaRapida(float v) => Mathf.Clamp01((v - 5f) / 5f);
+
+    float PertenenciaBaja(float p) => Mathf.Clamp01((0.3f - p) / 0.3f);
+    float PertenenciaAlta(float p) => Mathf.Clamp01((p - 0.5f) / 0.5f);
+
+    float PertenenciaBajaPorValor(float val) => Mathf.Clamp01(1f - val);
+    float PertenenciaAltaPorValor(float val) => Mathf.Clamp01(val);
+    float PertenenciaMediaPorValor(float val) => Mathf.Clamp01(1f - Mathf.Abs(val - 0.5f) / 0.25f);
 }
